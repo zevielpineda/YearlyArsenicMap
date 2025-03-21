@@ -1,0 +1,1 @@
+print(list(violations_grouped.items())[:10])  # Check first 10 items

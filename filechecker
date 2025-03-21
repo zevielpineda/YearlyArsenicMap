@@ -1,0 +1,4 @@
+import os
+
+file_path = r"C:\Users\cdpin\OneDrive\Documents\National Arsenic Stuff for VSC\YearlyArsenicMap\completely_filled_lat_lng_violations.csv"
+df = pd.read_csv(file_path)
