@@ -80,8 +80,35 @@ def create_map(selected_year):
     m.save(map_file)
     return map_file
 
-# Dash app
-dash_app = dash.Dash(__name__)
+# Dash app and google tag
+dash_app = dash.Dash(
+    __name__,
+    index_string="""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Arsenic Violations Map</title>
+
+        <!-- Google Tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-HZX5K597S0"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-HZX5K597S0');
+        </script>
+
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>{%config%} {%scripts%} {%renderer%}</footer>
+    </body>
+    </html>
+    """
+)
+
 dash_app.config.suppress_callback_exceptions = True
 
 # Create initial map file
