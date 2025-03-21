@@ -84,60 +84,57 @@ def create_map(selected_year):
 dash_app = dash.Dash(
     __name__,
     index_string="""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Arsenic Violations Map</title>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  <!-- ✅ Ensures proper scaling -->
+    <title>Arsenic Violations Map</title>
 
-        <!-- Google Tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-HZX5K597S0"></script>
-        <script>
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-HZX5K597S0');
-        </script>
+    <!-- Google Tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HZX5K597S0"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-HZX5K597S0');
+    </script>
 
-        <style>
-            body {
-                display: flex;
-                flex-direction: column;
-                min-height: 100vh;
-                margin: 0;
-                padding-bottom: 50px; /* Prevents overlap */
-            }
-            #app-content {
-                flex: 1;
-            }
-            footer {
-                position: relative; /* ✅ Change from 'fixed' to 'relative' */
-                width: 100%;
-                background-color: transparent; /* ✅ Make background transparent */
-                text-align: center;
-                padding: 10px;
-                font-size: 14px;
-                color: gray;
-                box-shadow: none; /* ✅ Remove shadow */
-            }
-        </style>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            padding-bottom: 50px;
+        }
+        #app-content {
+            flex: 1;
+        }
+        footer {
+            position: relative;
+            width: 100%;
+            background-color: transparent;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            color: gray;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-content">
+        {%app_entry%}
+    </div>
+    <footer>
+        Created by Zeviel Pineda © 2025 | Adapted from EPA Database
+    </footer>
+    <footer>{%config%} {%scripts%} {%renderer%}</footer>
+</body>
+</html>
+"""
 
-    </head>
-    <body>
-        <div id="app-content">
-            {%app_entry%}
-        </div>
-
-        <!-- Footer -->
-        <footer>
-            Created by Zeviel Pineda © 2025 | Adapted from EPA Database
-        </footer>
-
-        <footer>{%config%} {%scripts%} {%renderer%}</footer>
-    </body>
-    </html>
-    """
 )
 
 
@@ -181,6 +178,7 @@ dash_app.layout = html.Div([
             height='600'
         )
     ])
+    
 ])
 
 # Callback to update map
