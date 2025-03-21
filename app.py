@@ -112,15 +112,14 @@ dash_app = dash.Dash(
                 flex: 1;
             }
             footer {
-                position: fixed;
-                bottom: 0;
+                position: relative; /* ✅ Change from 'fixed' to 'relative' */
                 width: 100%;
-                background-color: white;
+                background-color: transparent; /* ✅ Make background transparent */
                 text-align: center;
                 padding: 10px;
                 font-size: 14px;
                 color: gray;
-                box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+                box-shadow: none; /* ✅ Remove shadow */
             }
         </style>
 
@@ -132,7 +131,7 @@ dash_app = dash.Dash(
 
         <!-- Footer -->
         <footer>
-            Created by Zeviel Pineda © 2025
+            Created by Zeviel Pineda © 2025 | Adapted from EPA Database
         </footer>
 
         <footer>{%config%} {%scripts%} {%renderer%}</footer>
@@ -140,6 +139,7 @@ dash_app = dash.Dash(
     </html>
     """
 )
+
 
 
 
