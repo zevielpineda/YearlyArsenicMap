@@ -1,0 +1,27 @@
+import pandas as pd
+
+# Load the datasets
+violations_df = pd.read_csv("Violation Report_USA_Super Simple.xlsx - REPORT.csv")
+arsenic_df = pd.read_csv("updated_arsenic_violations_with_coords.csv")
+
+# Standardize column names (lowercase, remove extra spaces)
+violations_df.columns = violations_df.columns.str.strip().str.lower()
+arsenic_df.columns = arsenic_df.columns.str.strip().str.lower()
+
+# Rename columns to have consistent naming
+violations_df.rename(columns={'arsenic violation fact sheet': 'violation_info'}, inplace=True)
+arsenic_df.rename(columns={'city name': 'city'}, inplace=True)
+
+# Trim whitespace from city and state names
+violations_df['city'] = violations_df['city'].str.strip().str.lower()
+violations_df['state'] = violations_df['state'].str.strip().str.lower()
+arsenic_df['city'] = arsenic_df['city'].str.strip().str.lower()
+arsenic_df['state'] = arsenic_df['state'].str.strip().str.lower()
+
+# Merge the datasets on city and state
+merged_df = pd.merge(arsenic_df, violations_df, on=['city', 'state'], how='left')
+
+# Save the cleaned and merged dataset
+merged_df.to_csv("merged_arsenic_violations.csv", index=False)
+
+print("Merged dataset saved successfully!")

@@ -1,0 +1,84 @@
+import pandas as pd
+import folium
+from folium.plugins import TimeSliderChoropleth, TimestampedGeoJson
+from collections import defaultdict
+import json
+
+# Define the file path correctly
+file_path = "c:/Users/cdpin/OneDrive/Documents/National Arsenic Stuff for VSC/YearlyArsenicMap/MapMap/formatted_completely_filled_lat_lng_violations.csv"
+
+# Read the CSV file
+df = pd.read_csv(file_path, encoding="utf-8")
+
+# Ensure required columns exist
+required_columns = {"State", "pws id", "pws name", "population", "City Name", "compliance period begin date", "compliance period end date", "lat", "lng"}
+missing_columns = required_columns - set(df.columns)
+if missing_columns:
+    raise ValueError(f"Missing columns: {missing_columns}")
+
+# Convert population column to numeric, forcing errors to NaN and filling NaN with 0
+df["population"] = pd.to_numeric(df["population"], errors="coerce").fillna(0).astype(int)
+
+# Convert compliance period begin date to year
+df["year"] = pd.to_datetime(df["compliance period begin date"], errors="coerce").dt.year.fillna(0).astype(int)
+
+# Aggregate data by lat, lng, and year
+aggregated_data = defaultdict(lambda: {"population": 0, "violations": 0, "pws_names": set()})
+for _, row in df.iterrows():
+    key = (row["lat"], row["lng"], row["year"])
+    aggregated_data[key]["population"] += row["population"]
+    aggregated_data[key]["violations"] += 1  # Each row represents a violation
+    aggregated_data[key]["pws_names"].add(row["pws name"])
+
+# Initialize a map, zoomed out to make sure we see the points
+arsenic_map = folium.Map(location=[40, -100], zoom_start=3)
+
+# Prepare data for TimeSliderChoropleth
+features = []
+styledict = {}
+
+for (lat, lng, year), data in aggregated_data.items():
+    feature_id = f"{lat}-{lng}"
+    if feature_id not in styledict:
+        styledict[feature_id] = {}
+    styledict[feature_id][year] = {
+        "radius": max(3, data["population"] / 1000),
+        "color": "blue",
+        "fillColor": "blue",
+        "fillOpacity": 0.6
+    }
+    feature = {
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [lng, lat]},
+        "properties": {
+            "popup": f"PWS Names: {', '.join(data['pws_names'])}<br>Population: {data['population']}<br>Violations: {data['violations']}<br>Year: {year}",
+            "feature_id": feature_id
+        }
+    }
+    features.append(feature)
+
+geojson_data = {"type": "FeatureCollection", "features": features}
+
+# Debugging: Save geojson to check its structure
+with open("geojson_debug.json", "w") as f:
+    json.dump(geojson_data, f, indent=4)
+
+print("GeoJSON data saved: geojson_debug.json")
+
+# Debugging outputs
+print("Sample aggregated data:", list(aggregated_data.items())[:5])
+print("Sample features:", features[:5])
+print("Sample styledict:", list(styledict.items())[:5])
+
+# TEST: Using TimestampedGeoJson instead of TimeSliderChoropleth
+TimestampedGeoJson(
+    geojson_data,
+    period="P1Y",  # 1 Year per step
+    add_last_point=True,
+    auto_play=True,
+    loop=True
+).add_to(arsenic_map)
+
+# Save the map
+arsenic_map.save("arsenic_violations_map.html")
+print("Map successfully created: arsenic_violations_map.html")

@@ -1,0 +1,118 @@
+import pandas as pd
+import folium
+from folium.plugins import MarkerCluster
+import dash
+from dash import dcc, html
+from dash.dependencies import Input, Output
+import plotly.express as px
+import json
+
+# Load dataset
+file_path = "c:/Users/cdpin/OneDrive/Documents/National Arsenic Stuff for VSC/YearlyArsenicMap/MapMap/formatted_completely_filled_lat_lng_violations.csv"
+df = pd.read_csv(file_path)
+df['population'] = pd.to_numeric(df['population'], errors='coerce').fillna(0).astype(int)
+df['year'] = pd.to_datetime(df['compliance period begin date'], errors='coerce').dt.year
+
+# Function to create a Folium map
+def create_map(selected_year):
+    filtered_df = df[df['year'] == selected_year]
+    
+    # Group data by lat/lng and year
+    grouped = filtered_df.groupby(['lat', 'lng']).agg({
+        'population': 'sum',  # Sum populations for scaling
+        'pws id': list,
+        'pws name': list,
+        'State': list,
+        'City Name': list,
+        'year': list
+    }).reset_index()
+    
+    # Normalize color scale based on max violations
+    max_violations = grouped['pws id'].apply(len).max()
+    
+    # Create Folium map
+    m = folium.Map(location=[filtered_df['lat'].mean(), filtered_df['lng'].mean()], zoom_start=5)
+    
+    marker_cluster = MarkerCluster().add_to(m)
+    
+    for _, row in grouped.iterrows():
+        num_violations = len(row['pws id'])
+        color_intensity = int((num_violations / max_violations) * 255) if max_violations else 50
+        color = f'#{255-color_intensity:02x}{100-color_intensity//2:02x}00'  # Yellow to red gradient
+        
+        popup_text = f"""
+        <b>State:</b> {row['State'][0]}<br>
+        <b>City:</b> {row['City Name'][0]}<br>
+        <b>PWS IDs:</b> {', '.join(row['pws id'])}<br>
+        <b>PWS Names:</b> {', '.join(row['pws name'])}<br>
+        <b>Violations:</b> {num_violations}<br>
+        <b>Population Affected:</b> {row['population']}
+        """
+        
+        folium.CircleMarker(
+            location=[row['lat'], row['lng']],
+            radius=max(5, row['population'] / 10000),  # Scale circle size
+            color=color,
+            fill=True,
+            fill_color=color,
+            fill_opacity=0.7,
+            popup=folium.Popup(popup_text, max_width=300)
+        ).add_to(marker_cluster)
+    
+    # Save map to an HTML file
+    map_file = "arsenic_map.html"
+    m.save(map_file)
+    return map_file
+
+# Dash app
+dash_app = dash.Dash(__name__)
+
+# App layout
+dash_app.layout = html.Div([
+    html.H1("Arsenic Violations Map"),
+    dcc.Slider(
+        id='year-slider',
+        min=2001,
+        max=2024,
+        value=2001,
+        marks={i: str(i) for i in range(2001, 2025)},
+        step=1
+    ),
+    html.Iframe(id='map', width='100%', height='600')
+])
+
+# Callback to update map
+@dash_app.callback(
+    Output('map', 'srcDoc'),
+    [Input('year-slider', 'value')]
+)
+def update_map(selected_year):
+    print(f"Slider Year Selected: {selected_year}")  # Debug slider value
+
+    try:
+        # Ensure selected_year is an integer
+        selected_year = int(selected_year)
+
+        # Filter data for the selected year
+        filtered_df = df[df['year'] == selected_year]
+
+        print(f"Filtered Data Size: {filtered_df.shape}")  # Debug filtered dataframe size
+        print(filtered_df.head())  # Debug sample filtered data
+
+        # If filtered data is empty, return a message
+        if filtered_df.empty:
+            return '<p style="color:red;">No data available for this year.</p>'
+
+        # Generate and load the map
+        map_file = create_map(selected_year)
+
+        # Read the map file and return the content
+        with open(map_file, "r", encoding="utf-8") as f:
+            return f.read()
+
+    except Exception as e:
+        print(f"Error in update_map: {e}")  # Print error to console
+        return '<p style="color:red;">An error occurred while updating the map.</p>'
+
+if __name__ == '__main__':
+    dash_app.run(debug=True)

@@ -1,0 +1,84 @@
+import pandas as pd
+import folium
+from folium.plugins import TimeSliderChoropleth
+import json
+from datetime import datetime
+
+# Load data
+df = pd.read_csv(r"C:\Users\cdpin\OneDrive\Documents\National Arsenic Stuff for VSC\YearlyArsenicMap\MapMap\formatted_completely_filled_lat_lng_violations.csv")
+
+# Print column names to verify
+print("Column names in the dataset:", df.columns)
+
+# Convert compliance period dates to datetime using correct column names
+df["compliance period begin date"] = pd.to_datetime(df["compliance period begin date"], errors='coerce')
+df["compliance period end date"] = pd.to_datetime(df["compliance period end date"], errors='coerce')
+
+# Convert population, lat, and lng to numeric (handle non-numeric values)
+df["population"] = pd.to_numeric(df["population"], errors='coerce').fillna(0)
+df["lat"] = pd.to_numeric(df["lat"], errors='coerce')
+df["lng"] = pd.to_numeric(df["lng"], errors='coerce')
+
+# Filter out invalid rows
+df = df.dropna(subset=["lat", "lng", "compliance period begin date", "compliance period end date"])
+
+# Create a dictionary to store violations by year
+violations_by_year = {year: [] for year in range(2001, 2025)}
+
+for _, row in df.iterrows():
+    start_year = row["compliance period begin date"].year
+    end_year = row["compliance period end date"].year
+    
+    for year in range(start_year, end_year + 1):
+        if 2001 <= year <= 2024:
+            violations_by_year[year].append({
+                "lat": row["lat"],
+                "lng": row["lng"],
+                "population": row["population"]
+            })
+
+# Create base map
+m = folium.Map(location=[39.8283, -98.5795], zoom_start=5, tiles="cartodbpositron")
+
+# Create a dictionary for TimeSliderChoropleth
+features = []
+styledict = {}
+
+for idx, (year, violations) in enumerate(violations_by_year.items()):
+    timestamp = datetime(year, 1, 1).timestamp() * 1000  # Convert to JS timestamp
+    for i, violation in enumerate(violations):
+        feature_id = f"{idx}_{i}"
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [violation["lng"], violation["lat"]]},
+            "properties": {"time": timestamp},
+        })
+        
+        if feature_id not in styledict:
+            styledict[feature_id] = {}
+        styledict[feature_id][timestamp] = {
+            "color": "red",
+            "opacity": 0.7,
+            "fillColor": "red",
+            "radius": max(3, violation["population"] / 5000)  # Adjusted for better visibility
+        }
+
+# Ensure features are added
+total_features = len(features)
+print(f"Total features added: {total_features}")
+if total_features == 0:
+    print("Warning: No features were added to the map.")
+
+# Add TimeSliderChoropleth layer if features exist
+if features:
+    time_slider = TimeSliderChoropleth(
+        {"type": "FeatureCollection", "features": features},
+        styledict=styledict
+    ).add_to(m)
+else:
+    print("No data available for TimeSliderChoropleth.")
+
+# Save map
+m.save("arsenic_violations_map.html")
+
+print("Map generated successfully: arsenic_violations_map.html")

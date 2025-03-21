@@ -1,0 +1,74 @@
+import pandas as pd
+import folium
+import branca.colormap as cm
+from folium.plugins import TimeSliderChoropleth
+
+# Load the datasets
+violations_df = pd.read_csv("Violation Report_USA_Super Simple.xlsx - REPORT.csv")
+arsenic_df = pd.read_csv("updated_arsenic_violations_with_coords.csv")
+
+# Print column names to check for issues
+print("Violations Columns:", violations_df.columns)
+print("Arsenic Columns:", arsenic_df.columns)
+
+# Ensure consistent column names for merging
+violations_df.rename(columns=lambda x: x.strip().lower(), inplace=True)
+arsenic_df.rename(columns=lambda x: x.strip().lower(), inplace=True)
+
+# Rename specific columns
+violations_df.rename(columns={"city name": "city", "state": "state"}, inplace=True)
+arsenic_df.rename(columns={"city name": "city", "state": "state"}, inplace=True)
+
+# Print column names again after renaming
+print("Updated Violations Columns:", violations_df.columns)
+print("Updated Arsenic Columns:", arsenic_df.columns)
+
+# Merge the datasets on city and state
+merged_df = pd.merge(arsenic_df, violations_df, on=["city", "state"], how="left")
+
+# Drop rows with missing lat/lng values
+merged_df.dropna(subset=["lat", "lng"], inplace=True)
+
+# Convert year column to datetime format
+merged_df["year"] = pd.to_datetime(merged_df["violation year"], format='%Y').dt.year
+
+# Create a Folium map centered in the US
+m = folium.Map(location=[39.8283, -98.5795], zoom_start=4)
+
+# Define a colormap
+colormap = cm.linear.YlOrRd_09.scale(merged_df["violations"].min(), merged_df["violations"].max())
+
+# Convert to GeoJSON format for TimeSlider
+geojson_data = {
+    "type": "FeatureCollection",
+    "features": []
+}
+
+for _, row in merged_df.iterrows():
+    feature = {
+        "type": "Feature",
+        "geometry": {
+            "type": "Point",
+            "coordinates": [row["lng"], row["lat"]]
+        },
+        "properties": {
+            "time": row["year"],
+            "style": {"color": colormap(row["violations"])},
+            "popup": f"{row['city']}, {row['state']}<br>Violations: {row['violations']}<br>Year: {row['year']}"
+        }
+    }
+    geojson_data["features"].append(feature)
+
+# Add the TimeSliderChoropleth layer
+TimeSliderChoropleth(
+    data=geojson_data,
+    styledict={
+        feature["properties"]["time"]: feature["properties"]["style"]
+        for feature in geojson_data["features"]
+    }
+).add_to(m)
+
+# Save the map
+m.save("arsenic_violations_map.html")
+
+print("Map has been created: 'arsenic_violations_map.html'")
