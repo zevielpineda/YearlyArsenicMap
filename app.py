@@ -146,7 +146,8 @@ def update_map(selected_year):
         return dash.no_update  # Prevents breaking layout
 
 
-import os
-
 if __name__ == '__main__':
     dash_app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)), debug=True)
+
+# Expose the Flask instance to Gunicorn
+server = dash_app.server
