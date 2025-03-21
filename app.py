@@ -7,7 +7,11 @@ from dash.dependencies import Input, Output
 import os
 
 # Load dataset
-file_path = "c:/Users/cdpin/OneDrive/Documents/National Arsenic Stuff for VSC/YearlyArsenicMap/MapMap/formatted_completely_filled_lat_lng_violations.csv"
+import os
+
+file_path = os.path.join(os.path.dirname(__file__), "formatted_completely_filled_lat_lng_violations.csv")
+
+
 df = pd.read_csv(file_path)
 
 # ✅ Remove commas before converting to numeric
