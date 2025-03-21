@@ -106,7 +106,7 @@ dash_app = dash.Dash(
             flex-direction: column;
             min-height: 100vh;
             margin: 0;
-            padding-bottom: 50px;
+            padding-bottom: 34px;
         }
         #app-content {
             flex: 1;
