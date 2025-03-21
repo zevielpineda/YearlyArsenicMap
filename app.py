@@ -100,12 +100,38 @@ dash_app = dash.Dash(
           gtag('config', 'G-HZX5K597S0');
         </script>
 
+        <style>
+            body {
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+                margin: 0;
+                padding-bottom: 50px; /* Prevents overlap */
+            }
+            #app-content {
+                flex: 1;
+            }
+            footer {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                background-color: white;
+                text-align: center;
+                padding: 10px;
+                font-size: 14px;
+                color: gray;
+                box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+            }
+        </style>
+
     </head>
     <body>
-        {%app_entry%}
+        <div id="app-content">
+            {%app_entry%}
+        </div>
 
         <!-- Footer -->
-        <footer style="text-align:center; padding:10px; font-size:14px; color:gray;">
+        <footer>
             Created by Zeviel Pineda © 2025
         </footer>
 
@@ -114,6 +140,7 @@ dash_app = dash.Dash(
     </html>
     """
 )
+
 
 
 dash_app.config.suppress_callback_exceptions = True
