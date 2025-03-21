@@ -103,11 +103,18 @@ dash_app = dash.Dash(
     </head>
     <body>
         {%app_entry%}
+
+        <!-- Footer -->
+        <footer style="text-align:center; padding:10px; font-size:14px; color:gray;">
+            Created by Zeviel Pineda © 2025
+        </footer>
+
         <footer>{%config%} {%scripts%} {%renderer%}</footer>
     </body>
     </html>
     """
 )
+
 
 dash_app.config.suppress_callback_exceptions = True
 
